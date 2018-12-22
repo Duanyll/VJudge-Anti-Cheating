@@ -47,5 +47,34 @@ namespace vjac
                 return result;
             });
         }
+
+        public async Task<string> PostAsync()
+        {
+            return await Task<string>.Run(() =>
+            {
+                string result = null;
+                try
+                {
+                    HttpWebRequest request = WebRequest.CreateHttp(Url);
+                    request.Method = "POST";
+                    request.ContentType = "application/x-www-form-urlencoded";
+                    request.ContentLength = Encoding.UTF8.GetByteCount(Content);
+                    request.CookieContainer = Cookies;
+                    request.AllowAutoRedirect = false;
+                    request.UserAgent = UA;
+                    request.Headers.Add("x-requested-with", "XMLHttpRequest");
+
+                    HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                    response.Cookies = Cookies.GetCookies(response.ResponseUri);
+                    StreamReader reader = new StreamReader(response.GetResponseStream());
+                    result = reader.ReadToEnd();
+                    reader.Close();
+                }
+                finally
+                {
+                }
+                return result;
+            });
+        }
     }
 }

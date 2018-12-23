@@ -47,7 +47,7 @@ namespace vjac
             });
         }
 
-        public async Task<string> GetStatusStringAsync(string UserName)
+        async Task<string> GetStatusStringAsync(string UserName)
         {
             AJAXCrawler crawler = new AJAXCrawler();
             crawler.Url = VJ_CONTEST_STATUS_URL;

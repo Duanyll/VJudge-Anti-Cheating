@@ -87,7 +87,7 @@ namespace vjac
                     HttpWebRequest request = WebRequest.CreateHttp(Url);
                     request.Method = "GET";
                     request.CookieContainer = Cookies;
-                    request.AllowAutoRedirect = false;
+                    request.AllowAutoRedirect = true;
                     request.UserAgent = UA;
 
                     HttpWebResponse response = (HttpWebResponse)request.GetResponse();

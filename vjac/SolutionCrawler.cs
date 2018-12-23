@@ -17,7 +17,7 @@ namespace vjac
     {
         public string ProblemID { get; set; }
         const string BD_SEARCH = "https://www.baidu.com/s?ie=UTF-8&wd={0}&pn={1}";
-        public async Task<List<string>> GetBaiduSearchResult()
+        public async Task<List<string>> GetBaiduSearchResult(int MaxResult)
         {
             int pn = 0;
             int OKCount = 0;
@@ -33,7 +33,7 @@ namespace vjac
                 var document = await parser.ParseAsync(page);
                 foreach (var i in document.QuerySelectorAll("h3.t > a"))
                 {
-                    if (i.InnerHtml.Contains(pid))
+                    if (i.InnerHtml.Contains(pid.ToUpper()) || i.InnerHtml.Contains(pid.ToLower()))
                     {
                         result.Add(i.GetAttribute("href"));
                         OKCount++;
@@ -42,7 +42,7 @@ namespace vjac
                 pn += 10;
                 Console.WriteLine($"前{pn}个结果已抓取完成.");
                 Thread.Sleep(1000);
-            } while (OKCount >= 8);
+            } while (OKCount >= 8 && pn <= MaxResult);
             return result;
         }
         public async Task<List<string>> GetCodeAsync(string Url)

@@ -96,6 +96,10 @@ namespace vjac
                     result = reader.ReadToEnd();
                     reader.Close();
                 }
+                catch(WebException ex){
+                    Debug.WriteLine(ex);
+                    return "";
+                }
                 finally
                 {
                 }

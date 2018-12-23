@@ -76,5 +76,31 @@ namespace vjac
                 return result;
             });
         }
+
+        public async Task<string> GetAsync()
+        {
+            return await Task<string>.Run(() =>
+            {
+                string result = null;
+                try
+                {
+                    HttpWebRequest request = WebRequest.CreateHttp(Url);
+                    request.Method = "GET";
+                    request.CookieContainer = Cookies;
+                    request.AllowAutoRedirect = false;
+                    request.UserAgent = UA;
+
+                    HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                    response.Cookies = Cookies.GetCookies(response.ResponseUri);
+                    StreamReader reader = new StreamReader(response.GetResponseStream());
+                    result = reader.ReadToEnd();
+                    reader.Close();
+                }
+                finally
+                {
+                }
+                return result;
+            });
+        }
     }
 }

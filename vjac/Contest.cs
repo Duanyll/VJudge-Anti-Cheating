@@ -115,6 +115,48 @@ namespace vjac
             System.Console.WriteLine("检查完毕");
         }
 
-        
+        public (bool, string) CheckCodeAsync(string ProblemID, string Code, string RID)
+        {
+            System.Console.WriteLine($"正在检查{RID}号程序");
+            File.WriteAllText($"{ContestID}/{ProblemID}/{RID}.cpp", $"//{RID}\n" + Code);
+
+            Process proc = new Process();
+            proc.StartInfo.FileName = "sim_c++";
+            proc.StartInfo.WorkingDirectory = $"{ContestID}/{ProblemID}";
+            proc.StartInfo.UseShellExecute = false;
+            proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            //proc.StartInfo.Arguments = $"-p -t 100";
+
+            StringBuilder args = new StringBuilder($"-p -t {SIMILARITY_LIMIT} ");
+            args.AppendJoin(' ', GetAllFileNames($"{ContestID}/{ProblemID}"));
+            proc.StartInfo.Arguments = args.ToString();
+
+            proc.StartInfo.CreateNoWindow = true;
+            proc.StartInfo.RedirectStandardOutput = true;
+            proc.Start();
+            proc.WaitForExit();
+            string result = proc.StandardOutput.ReadToEnd();
+            //Console.WriteLine(result);
+            Regex reg = new Regex("([0-9]+).cpp consists for ([0-9]+) % of ([0-9]+).cpp material");
+            var match = reg.Matches(result);
+            bool isCheat = false;
+            string msg = "";
+            foreach (Match j in match)
+            {
+                if (j.Groups[1].ToString() == RID)
+                {
+                    isCheat = true;
+                    string source = File.ReadAllLines($"{ContestID}/{ProblemID}/{j.Groups[3]}.cpp")[0].Substring(2);
+                    msg += $"与来自{source}的答案有{j.Groups[2]}的相似度\n";
+                }
+                if (j.Groups[3].ToString() == RID)
+                {
+                    isCheat = true;
+                    string source = File.ReadAllLines($"{ContestID}/{ProblemID}/{j.Groups[1]}.cpp")[0].Substring(2);
+                    msg += $"与来自{source}的答案有{j.Groups[2]}的相似度\n";
+                }
+            }
+            return (isCheat, msg);
+        }
     }
 }

@@ -115,7 +115,7 @@ namespace vjac
             System.Console.WriteLine("检查完毕");
         }
 
-        public (bool, string) CheckCodeAsync(string ProblemID, string Code, string RID)
+        public CheckResult CheckCode(string ProblemID, string Code, string RID)
         {
             System.Console.WriteLine($"正在检查{RID}号程序");
             File.WriteAllText($"{ContestID}/{ProblemID}/{RID}.cpp", $"//{RID}\n" + Code);
@@ -125,7 +125,6 @@ namespace vjac
             proc.StartInfo.WorkingDirectory = $"{ContestID}/{ProblemID}";
             proc.StartInfo.UseShellExecute = false;
             proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-            //proc.StartInfo.Arguments = $"-p -t 100";
 
             StringBuilder args = new StringBuilder($"-p -t {SIMILARITY_LIMIT} ");
             args.AppendJoin(' ', GetAllFileNames($"{ContestID}/{ProblemID}"));
@@ -139,24 +138,29 @@ namespace vjac
             //Console.WriteLine(result);
             Regex reg = new Regex("([0-9]+).cpp consists for ([0-9]+) % of ([0-9]+).cpp material");
             var match = reg.Matches(result);
-            bool isCheat = false;
-            string msg = "";
+            var res = new CheckResult();
+            res.PossibleSources = new List<(string Source, int Similarity)>();
+            res.IsCheat = false;
             foreach (Match j in match)
             {
                 if (j.Groups[1].ToString() == RID)
                 {
-                    isCheat = true;
+                    res.IsCheat = true;
                     string source = File.ReadAllLines($"{ContestID}/{ProblemID}/{j.Groups[3]}.cpp")[0].Substring(2);
-                    msg += $"与来自{source}的答案有{j.Groups[2]}的相似度\n";
+                    res.PossibleSources.Add((source, int.Parse(j.Groups[2].ToString())));
                 }
                 if (j.Groups[3].ToString() == RID)
                 {
-                    isCheat = true;
+                    res.IsCheat = true;
                     string source = File.ReadAllLines($"{ContestID}/{ProblemID}/{j.Groups[1]}.cpp")[0].Substring(2);
-                    msg += $"与来自{source}的答案有{j.Groups[2]}的相似度\n";
+                    res.PossibleSources.Add((source, int.Parse(j.Groups[2].ToString())));
                 }
             }
-            return (isCheat, msg);
+            if (res.IsCheat)
+            {
+                File.Delete($"{ContestID}/{ProblemID}/{RID}.cpp");
+            }
+            return res;
         }
     }
 }

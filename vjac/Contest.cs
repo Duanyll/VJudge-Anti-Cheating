@@ -18,6 +18,7 @@ namespace vjac
         Dictionary<char, string> ProblemID = new Dictionary<char, string>();
         public readonly string ContestID;
         const int MAX_SOLUTION_COUNT = 100;
+        const int SIMILARITY_LIMIT = 80;
         public Contest(string id)
         {
             ContestID = id;
@@ -29,7 +30,7 @@ namespace vjac
             VJ.InitCookies(a, b, c);
         }
 
-        public async void LoadProblems()
+        public async Task LoadProblemListAsync()
         {
             Directory.CreateDirectory(ContestID);
             List<string> prob = await VJ.GetProblemListAsync();
@@ -38,6 +39,10 @@ namespace vjac
             {
                 ProblemID.Add((char)('A' + i), prob[i]);
             }
+        }
+
+        public async void DownloadSolutionsAsync()
+        {
             foreach (var i in ProblemID)
             {
                 Directory.CreateDirectory($"{ContestID}/{i.Key}");
@@ -62,5 +67,54 @@ namespace vjac
                 }
             }
         }
+
+        List<string> GetAllFileNames(string path)
+        {
+            DirectoryInfo dinf = new DirectoryInfo(path);
+            var list = new List<string>();
+            foreach (var i in dinf.GetFiles())
+            {
+                list.Add(i.Name);
+            }
+            return list;
+        }
+
+        public void RemoveSameSolution()
+        {
+            System.Console.WriteLine("正在检查重复文件");
+            foreach (var i in ProblemID)
+            {
+                Process proc = new Process();
+                proc.StartInfo.FileName = "sim_c++";
+                proc.StartInfo.WorkingDirectory = $"{ContestID}/{i.Key}";
+                proc.StartInfo.UseShellExecute = false;
+                proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                //proc.StartInfo.Arguments = $"-p -t 100";
+
+                StringBuilder args = new StringBuilder("-p -t 100 ");
+                args.AppendJoin(' ', GetAllFileNames($"{ContestID}/{i.Key}"));
+                proc.StartInfo.Arguments = args.ToString();
+
+                proc.StartInfo.CreateNoWindow = true;
+                proc.StartInfo.RedirectStandardOutput = true;
+                proc.Start();
+                proc.WaitForExit();
+                string result = proc.StandardOutput.ReadToEnd();
+                //Console.WriteLine(result);
+                Regex reg = new Regex("([0-9]+).cpp consists for 100 % of ([0-9]+).cpp material");
+                var match = reg.Matches(result);
+                foreach (Match j in match)
+                {
+                    Console.WriteLine($"重复的文件:{j.Groups[1]},{j.Groups[2]}");
+                    if (File.Exists($"{ContestID}/{i.Key}/{j.Groups[1]}.cpp") && File.Exists($"{ContestID}/{i.Key}/{j.Groups[2]}.cpp"))
+                    {
+                        File.Delete($"{ContestID}/{i.Key}/{j.Groups[1]}.cpp");
+                    }
+                }
+            }
+            System.Console.WriteLine("检查完毕");
+        }
+
+        
     }
 }

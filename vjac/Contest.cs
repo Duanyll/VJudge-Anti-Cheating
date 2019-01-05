@@ -156,7 +156,7 @@ namespace vjac
             }
         }
 
-        public CheckResult CheckCode(Status st,string code)
+        public CheckResult CheckCode(Status st, string code)
         {
             System.Console.WriteLine($"正在检查{st.RID}号程序");
             File.WriteAllText($"{ContestID}/{st.Problem}/{st.RID}.cpp", $"//{st.RID}\n" + code);
@@ -203,6 +203,41 @@ namespace vjac
                 {
                     res.Add(result);
                 }
+                sw.WriteLine(i.RID);
+            }
+            sw.Close();
+            return res;
+        }
+
+        HashSet<string> CheckedRID { get; set; } = new HashSet<string>();
+
+        public List<CheckResult> CheckNewStatus()
+        {
+            var s = VJ.GetStatusAsync().Result;
+            var res = new List<CheckResult>();
+            if (!File.Exists($"{ContestID}/checked_rid"))
+            {
+                File.Create($"{ContestID}/checked_rid");
+            }
+            var sr = new StreamReader(File.OpenRead($"{ContestID}/checked_rid"));
+            while (!sr.EndOfStream)
+            {
+                CheckedRID.Add(sr.ReadLine());
+            }
+            sr.Close();
+            var sw = File.AppendText($"{ContestID}/checked_rid");
+            foreach (var i in s)
+            {
+                if (CheckedRID.Contains(i.RID))
+                {
+                    continue;
+                }
+                var result = CheckCode(i, VJ.GetCodeAsync(i.RID).Result);
+                if (result.IsCheat)
+                {
+                    res.Add(result);
+                }
+                CheckedRID.Add(i.RID);
                 sw.WriteLine(i.RID);
             }
             sw.Close();

@@ -78,7 +78,6 @@ namespace vjac
             }
             return list;
         }
-
         public void RemoveSameSolution()
         {
             System.Console.WriteLine("正在检查重复文件");
@@ -115,19 +114,15 @@ namespace vjac
             System.Console.WriteLine("检查完毕");
         }
 
-        public CheckResult CheckCode(string ProblemID, string Code, string RID)
+        int CompareFile(string PathA, string PathB)
         {
-            System.Console.WriteLine($"正在检查{RID}号程序");
-            File.WriteAllText($"{ContestID}/{ProblemID}/{RID}.cpp", $"//{RID}\n" + Code);
-
             Process proc = new Process();
             proc.StartInfo.FileName = "sim_c++";
-            proc.StartInfo.WorkingDirectory = $"{ContestID}/{ProblemID}";
+            //proc.StartInfo.WorkingDirectory = $"{ContestID}/{ProblemID}";
             proc.StartInfo.UseShellExecute = false;
             proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
-            StringBuilder args = new StringBuilder($"-p -t {SIMILARITY_LIMIT} ");
-            args.AppendJoin(' ', GetAllFileNames($"{ContestID}/{ProblemID}"));
+            StringBuilder args = new StringBuilder($"-p {PathA} {PathB}");
             proc.StartInfo.Arguments = args.ToString();
 
             proc.StartInfo.CreateNoWindow = true;
@@ -136,30 +131,81 @@ namespace vjac
             proc.WaitForExit();
             string result = proc.StandardOutput.ReadToEnd();
             //Console.WriteLine(result);
-            Regex reg = new Regex("([0-9]+).cpp consists for ([0-9]+) % of ([0-9]+).cpp material");
-            var match = reg.Matches(result);
+            Regex reg = new Regex("(.+?).cpp consists for ([0-9]+?) % of (.+?).cpp material");
+            if (reg.Match(result).Success)
+            {
+                return int.Parse(reg.Match(result).Groups[2].ToString());
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        string GetCodeSource(string path)
+        {
+            var sr = new StreamReader(File.OpenRead(path));
+            var fl = sr.ReadLine().Substring(2);
+            if (int.TryParse(fl, out int rid))
+            {
+                return $"https://vjudge.net/solution/data/{rid}";
+            }
+            else
+            {
+                return fl;
+            }
+        }
+
+        public CheckResult CheckCode(Status st,string code)
+        {
+            System.Console.WriteLine($"正在检查{st.RID}号程序");
+            File.WriteAllText($"{ContestID}/{st.Problem}/{st.RID}.cpp", $"//{st.RID}\n" + code);
+
             var res = new CheckResult();
             res.PossibleSources = new List<(string Source, int Similarity)>();
             res.IsCheat = false;
-            foreach (Match j in match)
+            res.Status = st;
+
+            foreach (var i in new DirectoryInfo($"{ContestID}/{st.Problem}").GetFiles())
             {
-                if (j.Groups[1].ToString() == RID)
+                if (i.Name == $"{st.RID}.cpp")
                 {
-                    res.IsCheat = true;
-                    string source = File.ReadAllLines($"{ContestID}/{ProblemID}/{j.Groups[3]}.cpp")[0].Substring(2);
-                    res.PossibleSources.Add((source, int.Parse(j.Groups[2].ToString())));
+                    continue;
                 }
-                if (j.Groups[3].ToString() == RID)
+                int sim = CompareFile($"{ContestID}/{st.Problem}/{st.RID}.cpp", $"{ContestID}/{st.Problem}/{i.Name}");
+                if (sim >= SIMILARITY_LIMIT)
                 {
                     res.IsCheat = true;
-                    string source = File.ReadAllLines($"{ContestID}/{ProblemID}/{j.Groups[1]}.cpp")[0].Substring(2);
-                    res.PossibleSources.Add((source, int.Parse(j.Groups[2].ToString())));
+                    res.PossibleSources.Add((GetCodeSource($"{ContestID}/{st.Problem}/{i.Name}"), sim));
                 }
             }
+
             if (res.IsCheat)
             {
-                File.Delete($"{ContestID}/{ProblemID}/{RID}.cpp");
+                File.Delete($"{ContestID}/{st.Problem}/{st.RID}.cpp");
             }
+            return res;
+        }
+
+        public List<CheckResult> CheckAllStatus()
+        {
+            var s = VJ.GetStatusAsync("").Result;
+            var res = new List<CheckResult>();
+            if (File.Exists($"{ContestID}/checked_rid"))
+            {
+                File.Delete($"{ContestID}/checked_rid");
+            }
+            var sw = File.AppendText($"{ContestID}/checked_rid");
+            foreach (var i in s)
+            {
+                var result = CheckCode(i, VJ.GetCodeAsync(i.RID).Result);
+                if (result.IsCheat)
+                {
+                    res.Add(result);
+                }
+                sw.WriteLine(i.RID);
+            }
+            sw.Close();
             return res;
         }
     }

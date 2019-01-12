@@ -40,6 +40,7 @@ namespace vjac
                     StreamReader reader = new StreamReader(response.GetResponseStream());
                     result = reader.ReadToEnd();
                     reader.Close();
+                    Url = response.ResponseUri.ToString();
                 }
                 finally
                 {
@@ -69,6 +70,7 @@ namespace vjac
                     StreamReader reader = new StreamReader(response.GetResponseStream());
                     result = reader.ReadToEnd();
                     reader.Close();
+                    Url = response.ResponseUri.ToString();
                 }
                 finally
                 {
@@ -95,6 +97,7 @@ namespace vjac
                     StreamReader reader = new StreamReader(response.GetResponseStream());
                     result = reader.ReadToEnd();
                     reader.Close();
+                    Url = response.ResponseUri.ToString();
                 }
                 catch(WebException ex){
                     Debug.WriteLine(ex);

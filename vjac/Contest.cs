@@ -18,30 +18,30 @@ namespace vjac
         Dictionary<char, string> ProblemID = new Dictionary<char, string>();
         public readonly string ContestID;
         const int MAX_SOLUTION_COUNT = 100;
-        const int SIMILARITY_LIMIT = 80;
+        public int SimilarityLimit { get; set; } = 80;
         public Contest(string id)
         {
             ContestID = id;
             VJ.ContestID = id;
         }
 
-        public void SetCookies(string a, string b, string c)
+        public void SetCookies(string sessionid, string ga, string jaxq)
         {
-            VJ.InitCookies(a, b, c);
+            VJ.InitCookies(sessionid, ga, jaxq);
         }
 
-        public async Task LoadProblemListAsync()
+        public void LoadProblemList()
         {
             Directory.CreateDirectory(ContestID);
-            List<string> prob = await VJ.GetProblemListAsync();
-            Console.WriteLine($"{prob.Count} problems found.");
+            List<string> prob = VJ.GetProblemListAsync().Result;
+            Console.WriteLine($"[{DateTime.Now}]发现{prob.Count}道题目.");
             for (int i = 0; i < prob.Count; i++)
             {
                 ProblemID.Add((char)('A' + i), prob[i]);
             }
         }
 
-        public async void DownloadSolutionsAsync()
+        public async Task DownloadSolutionsAsync()
         {
             foreach (var i in ProblemID)
             {
@@ -57,12 +57,12 @@ namespace vjac
                         solID++;
                         continue;
                     }
-                    List<string> code = await crawler.GetCodeAsync(j);
+                    (List<string> code,string url) = (await crawler.GetCodeAsync(j));
                     foreach (var k in code)
                     {
-                        File.WriteAllText($"{ContestID}/{i.Key}/{solID++}.cpp", $"//{j}\n" + k);
+                        File.WriteAllText($"{ContestID}/{i.Key}/{solID++}.cpp", $"//{url}\n" + k);
                     }
-                    Console.WriteLine($"Code from ${j} saved.");
+                    Console.WriteLine($"[{DateTime.Now}]已保存来自{url}的代码.");
                     Thread.Sleep(500);
                 }
             }
@@ -80,7 +80,7 @@ namespace vjac
         }
         public void RemoveSameSolution()
         {
-            System.Console.WriteLine("正在检查重复文件");
+            System.Console.WriteLine($"[{DateTime.Now}]正在检查重复文件");
             foreach (var i in ProblemID)
             {
                 Process proc = new Process();
@@ -104,14 +104,14 @@ namespace vjac
                 var match = reg.Matches(result);
                 foreach (Match j in match)
                 {
-                    Console.WriteLine($"重复的文件:{j.Groups[1]},{j.Groups[2]}");
+                    Console.WriteLine($"[{DateTime.Now}]重复的文件:{j.Groups[1]},{j.Groups[2]}");
                     if (File.Exists($"{ContestID}/{i.Key}/{j.Groups[1]}.cpp") && File.Exists($"{ContestID}/{i.Key}/{j.Groups[2]}.cpp"))
                     {
                         File.Delete($"{ContestID}/{i.Key}/{j.Groups[1]}.cpp");
                     }
                 }
             }
-            System.Console.WriteLine("检查完毕");
+            System.Console.WriteLine("[{DateTime.Now}]检查完毕");
         }
 
         int CompareFile(string PathA, string PathB)
@@ -158,7 +158,7 @@ namespace vjac
 
         public CheckResult CheckCode(Status st, string code)
         {
-            System.Console.WriteLine($"正在检查{st.RID}号程序");
+            System.Console.WriteLine($"[{DateTime.Now}]正在检查{st.RID}号程序");
             File.WriteAllText($"{ContestID}/{st.Problem}/{st.RID}.cpp", $"//{st.RID}\n" + code);
 
             var res = new CheckResult();
@@ -173,7 +173,7 @@ namespace vjac
                     continue;
                 }
                 int sim = CompareFile($"{ContestID}/{st.Problem}/{st.RID}.cpp", $"{ContestID}/{st.Problem}/{i.Name}");
-                if (sim >= SIMILARITY_LIMIT)
+                if (sim >= SimilarityLimit)
                 {
                     res.IsCheat = true;
                     res.PossibleSources.Add((GetCodeSource($"{ContestID}/{st.Problem}/{i.Name}"), sim));
@@ -189,6 +189,7 @@ namespace vjac
 
         public List<CheckResult> CheckAllStatus()
         {
+            System.Console.WriteLine($"[{DateTime.Now}]正在检查所有程序");
             var s = VJ.GetStatusAsync("").Result;
             var res = new List<CheckResult>();
             if (File.Exists($"{ContestID}/checked_rid"))
@@ -206,25 +207,32 @@ namespace vjac
                 sw.WriteLine(i.RID);
             }
             sw.Close();
+            System.Console.WriteLine($"[{DateTime.Now}]检查结束");
             return res;
         }
 
         HashSet<string> CheckedRID { get; set; } = new HashSet<string>();
-
+        public void LoadCheckedRID(){
+            if (File.Exists($"{ContestID}/checked_rid"))
+            {
+                var sr = new StreamReader(File.OpenRead($"{ContestID}/checked_rid"));
+                while (!sr.EndOfStream)
+                {
+                    CheckedRID.Add(sr.ReadLine());
+                }
+                sr.Close();
+            }
+        }
         public List<CheckResult> CheckNewStatus()
         {
+            System.Console.WriteLine($"[{DateTime.Now}]正在检查新增程序");
             var s = VJ.GetStatusAsync().Result;
             var res = new List<CheckResult>();
             if (!File.Exists($"{ContestID}/checked_rid"))
             {
                 File.Create($"{ContestID}/checked_rid");
+                Thread.Sleep(100);
             }
-            var sr = new StreamReader(File.OpenRead($"{ContestID}/checked_rid"));
-            while (!sr.EndOfStream)
-            {
-                CheckedRID.Add(sr.ReadLine());
-            }
-            sr.Close();
             var sw = File.AppendText($"{ContestID}/checked_rid");
             foreach (var i in s)
             {
@@ -241,6 +249,7 @@ namespace vjac
                 sw.WriteLine(i.RID);
             }
             sw.Close();
+            System.Console.WriteLine($"[{DateTime.Now}]检查结束");
             return res;
         }
     }

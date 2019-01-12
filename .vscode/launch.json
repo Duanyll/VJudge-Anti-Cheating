@@ -11,7 +11,7 @@
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/vjac/bin/Debug/netcoreapp2.1/vjac.dll",
-            "args": [],
+            "args": ["sessionid=1EB4627C0A7EC89287ED8703CF2C6FFB","jaxq=duanyll|SA3G0NG3ZNO2FW2OXE1DLAJK4ZWGQ5","contest=276916","scan_timeout=5000"],
             "cwd": "${workspaceFolder}/vjac",
             // For more information about the 'console' field, see https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md#console-terminal-window
             "console": "externalTerminal",

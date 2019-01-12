@@ -45,9 +45,15 @@ namespace vjac
             switch (Config["action"])
             {
                 case "clear":
+                    DeleteFolder($"{Config["contest"]}");
                     Directory.Delete($"{Config["contest"]}");
                     break;
                 case "start":
+                    if (File.Exists($"cookie"))
+                    {
+                        var cookie = File.ReadAllLines("cookie");
+                        con.SetCookies(cookie[0], cookie[1], cookie[2]);
+                    }
                     if (!Directory.Exists($"{Config["contest"]}"))
                     {
                         System.Console.WriteLine($"[{DateTime.Now}]正在下载题目与标程");
@@ -58,7 +64,7 @@ namespace vjac
                     System.Console.WriteLine("==========正在实时检查,按Ctrl+C结束===========");
                     Console.CancelKeyPress += (s, e) =>
                     {
-                        System.Console.WriteLine($"[{DateTime.Now}已停止程序]");
+                        System.Console.WriteLine($"[{DateTime.Now}]已停止程序");
                         e.Cancel = false;
                     };
                     con.LoadCheckedRID();
@@ -94,6 +100,28 @@ $@"
                     {
                         Console.ReadKey();
                     }
+            }
+        }
+        public static void DeleteFolder(string dir)
+        {
+            foreach (string d in Directory.GetFileSystemEntries(dir))
+            {
+                if (File.Exists(d))
+                {
+                    FileInfo fi = new FileInfo(d);
+                    if (fi.Attributes.ToString().IndexOf("ReadOnly") != -1)
+                        fi.Attributes = FileAttributes.Normal;
+                    File.Delete(d);//直接删除其中的文件  
+                }
+                else
+                {
+                    DirectoryInfo d1 = new DirectoryInfo(d);
+                    if (d1.GetFiles().Length != 0)
+                    {
+                        DeleteFolder(d1.FullName);////递归删除子文件夹
+                    }
+                    Directory.Delete(d);
+                }
             }
         }
     }

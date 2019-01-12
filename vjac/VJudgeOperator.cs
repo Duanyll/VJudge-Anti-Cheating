@@ -99,7 +99,7 @@ namespace vjac
             crawler.Cookies = cookies;
             string orig = await crawler.PostAsync();
             JsonObject obj = JsonArray.Parse(orig) as JsonObject;
-            return Regex.Unescape(obj["code"].ToString());
+            return Regex.Unescape(obj["code"].ToString()).Trim('"');
         }
 
         public async Task<List<string>> GetProblemListAsync()

@@ -41,6 +41,12 @@ namespace vjac
             }
         }
 
+        public bool ValidateCookie(){
+            ProblemID.Clear();
+            LoadProblemList();
+            return ProblemID.Count != 0;
+        }
+
         public async Task DownloadSolutionsAsync()
         {
             foreach (var i in ProblemID)

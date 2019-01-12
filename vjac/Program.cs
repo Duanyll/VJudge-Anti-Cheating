@@ -41,7 +41,7 @@ namespace vjac
             }
             con = new Contest(Config["contest"]);
             con.SimilarityLimit = int.Parse(Config["similarity_limit"]);
-            con.SetCookies(Config["sessionid"], Config["ga"], Config["jaxq"]);
+            con.SetCookies("", "", Config["jaxq"]);
             switch (Config["action"])
             {
                 case "clear":
@@ -52,13 +52,19 @@ namespace vjac
                     if (File.Exists($"cookie"))
                     {
                         var cookie = File.ReadAllLines("cookie");
-                        con.SetCookies(cookie[0], cookie[1], cookie[2]);
+                        con.SetCookies("","",cookie[0]);
+                    }
+                    if (!con.ValidateCookie())
+                    {
+                        System.Console.WriteLine("提供的Cookie可能已经失效");
+                        //return;
                     }
                     if (!Directory.Exists($"{Config["contest"]}"))
                     {
                         System.Console.WriteLine($"[{DateTime.Now}]正在下载题目与标程");
                         con.LoadProblemList();
                         con.DownloadSolutionsAsync().Wait();
+                        con.RemoveSameSolution();
                         System.Console.WriteLine($"[{DateTime.Now}]下载结束");
                     }
                     System.Console.WriteLine("==========正在实时检查,按Ctrl+C结束===========");
@@ -89,7 +95,9 @@ $@"
                             {
                                 sw.WriteLine($"|{i.Status.User}|{i.Status.RID}|{i.Status.Problem}|{j.Source}|{j.Similarity}|");
                             }
+                            Console.ForegroundColor = ConsoleColor.Red;
                             System.Console.WriteLine($"[{DateTime.Now}]发现可能作弊:{i.Status.RID}");
+                            Console.ResetColor();
                         }
                         sw.Close();
                     };
@@ -100,6 +108,26 @@ $@"
                     {
                         Console.ReadKey();
                     }
+                case "removesame":
+                    if (File.Exists($"cookie"))
+                    {
+                        var cookie = File.ReadAllLines("cookie");
+                        con.SetCookies("", "", cookie[0]);
+                    }
+                    if (!con.ValidateCookie())
+                    {
+                        System.Console.WriteLine("提供的Cookie可能已经失效");
+                        //return;
+                    }
+                    if (Directory.Exists($"{Config["contest"]}"))
+                    {
+                        con.LoadProblemList();
+                        con.RemoveSameSolution();
+                    }
+                    break;
+                default:
+                    System.Console.WriteLine("未知操作");
+                    break;
             }
         }
         public static void DeleteFolder(string dir)

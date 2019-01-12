@@ -47,6 +47,13 @@ namespace vjac
             });
         }
 
+        public void Login(){
+            AJAXCrawler crawler = new AJAXCrawler();
+            crawler.Url = VJ_URL;
+            crawler.Cookies = cookies;
+            crawler.GetAsync().Wait();
+        }
+
         async Task<string> GetStatusStringAsync(string UserName, int startPos)
         {
             AJAXCrawler crawler = new AJAXCrawler();

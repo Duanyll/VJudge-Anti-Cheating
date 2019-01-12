@@ -54,15 +54,11 @@ namespace vjac
                         var cookie = File.ReadAllLines("cookie");
                         con.SetCookies("","",cookie[0]);
                     }
-                    if (!con.ValidateCookie())
-                    {
-                        System.Console.WriteLine("提供的Cookie可能已经失效");
-                        //return;
-                    }
+                    con.Login();
+                    con.LoadProblemList();
                     if (!Directory.Exists($"{Config["contest"]}"))
                     {
                         System.Console.WriteLine($"[{DateTime.Now}]正在下载题目与标程");
-                        con.LoadProblemList();
                         con.DownloadSolutionsAsync().Wait();
                         con.RemoveSameSolution();
                         System.Console.WriteLine($"[{DateTime.Now}]下载结束");
@@ -73,7 +69,6 @@ namespace vjac
                         System.Console.WriteLine($"[{DateTime.Now}]已停止程序");
                         e.Cancel = false;
                     };
-                    con.LoadCheckedRID();
                     if (!File.Exists($"{con.ContestID}/result.md"))
                     {
                         File.WriteAllText($"{con.ContestID}/result.md",
@@ -114,11 +109,7 @@ $@"
                         var cookie = File.ReadAllLines("cookie");
                         con.SetCookies("", "", cookie[0]);
                     }
-                    if (!con.ValidateCookie())
-                    {
-                        System.Console.WriteLine("提供的Cookie可能已经失效");
-                        //return;
-                    }
+                    con.Login();
                     if (Directory.Exists($"{Config["contest"]}"))
                     {
                         con.LoadProblemList();

@@ -32,7 +32,7 @@ namespace vjac
 
         public void LoadProblemList()
         {
-            Directory.CreateDirectory(ContestID);
+            //Directory.CreateDirectory(ContestID);
             List<string> prob = VJ.GetProblemListAsync().Result;
             Console.WriteLine($"[{DateTime.Now}]发现{prob.Count}道题目.");
             for (int i = 0; i < prob.Count; i++)
@@ -45,6 +45,10 @@ namespace vjac
             ProblemID.Clear();
             LoadProblemList();
             return ProblemID.Count != 0;
+        }
+
+        public void Login(){
+            VJ.Login();
         }
 
         public async Task DownloadSolutionsAsync()
